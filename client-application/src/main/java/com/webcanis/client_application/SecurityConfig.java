@@ -5,6 +5,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -21,12 +24,23 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> {
-                    authorize.requestMatchers("/lessons").permitAll();
+                    authorize.requestMatchers("/").permitAll();
                     authorize.anyRequest().authenticated();
                         }
                 )
                 .oauth2Login(Customizer.withDefaults())
                 .formLogin(Customizer.withDefaults());
         return http.build();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        // Add a test user
+        return new InMemoryUserDetailsManager(
+                User.withUsername("testuser")
+                        .password("{noop}password") // {noop} disables password encoding for simplicity
+                        .roles("USER") // Assign USER role
+                        .build()
+        );
     }
 }
