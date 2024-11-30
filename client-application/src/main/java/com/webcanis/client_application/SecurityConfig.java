@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
+import static org.springframework.http.HttpMethod.GET;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -23,10 +25,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(authorize -> {
-                    authorize.requestMatchers("/").permitAll();
-                    authorize.anyRequest().authenticated();
-                        }
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/","/error", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers(GET, "/lessons/**").hasAuthority("SCOPE_lessons:read")
+                        .requestMatchers("/lessons/**").hasAuthority("SCOPE_lessons:write")
+                        .anyRequest().authenticated()
+
                 )
                 .oauth2Login(Customizer.withDefaults())
                 .formLogin(Customizer.withDefaults());
@@ -40,6 +44,7 @@ public class SecurityConfig {
                 User.withUsername("testuser")
                         .password("{noop}password") // {noop} disables password encoding for simplicity
                         .roles("USER") // Assign USER role
+                        .authorities("SCOPE_lessons:read")
                         .build()
         );
     }
