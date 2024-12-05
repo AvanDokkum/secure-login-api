@@ -11,7 +11,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableWebSecurity
+//@EnableWebSecurity
 public class SecurityConfig {
 
     /*
@@ -23,24 +23,26 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(authorize -> {
-                    authorize.requestMatchers("/").permitAll();
-                    authorize.anyRequest().authenticated();
-                        }
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/").permitAll() // Allow homepage
+                        .anyRequest().authenticated()    // Secure other requests
                 )
-                .oauth2Login(Customizer.withDefaults())
-                .formLogin(Customizer.withDefaults());
+                .formLogin(Customizer.withDefaults())
+                .oauth2Login(Customizer.withDefaults()); // Enable OAuth2 login
+
+
         return http.build();
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
-        // Add a test user
         return new InMemoryUserDetailsManager(
                 User.withUsername("testuser")
-                        .password("{noop}password") // {noop} disables password encoding for simplicity
-                        .roles("USER") // Assign USER role
+                        .password("{noop}password") // No encoding for simplicity
+                        .authorities("read")
                         .build()
         );
     }
+
+
 }

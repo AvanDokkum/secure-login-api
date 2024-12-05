@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -26,25 +27,36 @@ public class AuthorizationServerConfig {
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
         RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                //Todo: Refactor : Change "golf"-naming and don't do hardcoded "golf-client", "golf-secret" etc.
                 .clientId("golf-client")
-                .clientSecret(passwordEncoder().encode("golf-secret"))
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .clientSecret("golf-secret") // No encoding for simplicity
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .redirectUri("http://localhost:8080/login/oauth2/code/golf-client")
+//                .scope(OidcScopes.OPENID) // Ensure this is included for OpenID Connect
                 .scope("read")
+//                .scope("write")
+
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .build();
+
         return new InMemoryRegisteredClientRepository(registeredClient);
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+        // Apply default security for OAuth2 Authorization Server
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+
+//        http
+//                .authorizeHttpRequests(authorize -> authorize
+//                        .requestMatchers("/login", "/.well-known/**").permitAll() // Public access
+//                        .anyRequest().authenticated() // Protect other endpoints
+//                )
+//                .formLogin(Customizer.withDefaults()); // Enable default login page for user authentication
+
+        return http.build(); // No additional customizations here!
     }
 
-    @Bean
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-        return http.formLogin(Customizer.withDefaults()).build();
-    }
+
 
 }
